@@ -23,7 +23,12 @@
 </head>
 <body class="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
 
-    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
+    <div class="relative bg-white rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
+        <div class="absolute top-4 left-4 text-left text-xs text-gray-500">
+            <p>المحامي معاذ ابو دوله</p>
+            <p>0788898842</p>
+        </div>
+
         <h1 class="text-3xl font-bold text-center text-blue-800 mb-6">حاسبة الحقوق العمالية</h1>
         <p class="text-center text-gray-600 mb-8">
             بناءً على قانون العمل الأردني. أدخل معلوماتك لحساب مستحقاتك.
@@ -63,6 +68,10 @@
                         <label for="endDate" class="block text-sm font-medium text-gray-700">تاريخ نهاية العمل</label>
                         <input type="date" id="endDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     </div>
+                    <div id="contractEndDateInput" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
+                        <label for="contractEndDate" class="block text-sm font-medium text-blue-700">تاريخ نهاية العقد</label>
+                        <input type="date" id="contractEndDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                    </div>
                     <div id="serviceDurationDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
                         <p class="text-sm font-medium text-blue-700">مدة الخدمة المحتسبة:</p>
                         <p class="text-base text-blue-900 font-bold mt-1" id="calculatedDuration"></p>
@@ -90,11 +99,6 @@
             <div class="flex items-center">
                 <input type="checkbox" id="fixedTerm" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                 <label for="fixedTerm" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد محدد المدة)</label>
-            </div>
-            
-            <div id="remainingTermInput" class="hidden">
-                <label for="remainingMonths" class="block text-sm font-medium text-gray-700">المدة المتبقية من العقد (شهر)</label>
-                <input type="number" id="remainingMonths" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل عدد الأشهر المتبقية">
             </div>
             
             <!-- Overtime Input Group -->
@@ -169,7 +173,7 @@
                 <p class="text-green-600 text-xl font-bold mt-1" id="dismissalCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
                     *يتم احتساب بدل الفصل التعسفي بناءً على نصف راتب شهر عن كل سنة خدمة (على ألا يقل عن راتب شهرين).
-                    *في حالة العقد محدد المدة، يتم احتساب راتب كامل المدة المتبقية.
+                    *في حالة العقد محدد المدة، يتم احتساب أجور المدة المتبقية من العقد (الفرق بين تاريخ نهاية العمل وتاريخ نهاية العقد).
                 </p>
             </div>
 
@@ -244,19 +248,19 @@
             });
 
             document.getElementById('fixedTerm').addEventListener('change', function() {
-                const remainingTermInput = document.getElementById('remainingTermInput');
+                const contractEndDateInput = document.getElementById('contractEndDateInput');
                 if (this.checked) {
-                    remainingTermInput.classList.remove('hidden');
+                    contractEndDateInput.classList.remove('hidden');
                     document.getElementById('arbitraryDismissal').checked = false;
                 } else {
-                    remainingTermInput.classList.add('hidden');
+                    contractEndDateInput.classList.add('hidden');
                 }
             });
 
             document.getElementById('arbitraryDismissal').addEventListener('change', function() {
                 if (this.checked) {
                     document.getElementById('fixedTerm').checked = false;
-                    document.getElementById('remainingTermInput').classList.add('hidden');
+                    document.getElementById('contractEndDateInput').classList.add('hidden');
                 }
             });
 
@@ -286,28 +290,42 @@
             if (startDateStr && endDateStr) {
                 const duration = calculateDuration(startDateStr, endDateStr);
                 
-                if (duration.years > 0 || duration.months > 0 || duration.days > 0) {
+                if (duration.years >= 0 && duration.months >= 0 && duration.days >= 0 && (duration.years > 0 || duration.months > 0 || duration.days > 0)) {
                     serviceDurationDisplay.classList.remove('hidden');
                     calculatedDuration.innerText = `${duration.years} سنة و ${duration.months} شهر و ${duration.days} يوم`;
                     
                     const totalServiceDays = (new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24);
                     const totalServiceYears = totalServiceDays / 365.25;
 
-                    let leaveRate = 14;
-                    if (totalServiceYears >= 5) {
-                        leaveRate = 21;
-                    }
-                    const totalDeservedLeaveDays = totalServiceYears * leaveRate;
-                    const cappedDeservedLeaveDays = Math.min(totalDeservedLeaveDays, leaveRate * 2);
+                    let totalDeservedLeaveDays = 0;
+                    const serviceCap = 2; // Maximum years of leave accumulation
 
-                    if (cappedDeservedLeaveDays > 0) {
+                    if (totalServiceYears <= 5) {
+                        const leaveYears = Math.min(totalServiceYears, serviceCap);
+                        totalDeservedLeaveDays = leaveYears * 14;
+                    } else { // totalServiceYears > 5
+                        const startOfLastTwoYears = totalServiceYears - serviceCap;
+                        
+                        if (startOfLastTwoYears >= 5) {
+                            // The entire last two years of service were at the 21-day rate
+                            totalDeservedLeaveDays = serviceCap * 21;
+                        } else {
+                            // The rate changed from 14 to 21 within the last two years
+                            const yearsAt14Rate = 5 - startOfLastTwoYears;
+                            const yearsAt21Rate = totalServiceYears - 5;
+                            
+                            totalDeservedLeaveDays = (yearsAt14Rate * 14) + (yearsAt21Rate * 21);
+                        }
+                    }
+
+                    if (totalDeservedLeaveDays > 0) {
                         calculatedLeaveDaysDisplay.classList.remove('hidden');
-                        calculatedLeaveDaysInput.value = cappedDeservedLeaveDays.toFixed(2);
+                        calculatedLeaveDaysInput.value = totalDeservedLeaveDays.toFixed(2);
                     } else {
                         calculatedLeaveDaysDisplay.classList.add('hidden');
                     }
 
-                    const overtimeDaysInTwoYears = Math.min(2 * 365, (duration.years * 365.25) + (duration.months * 30.44) + duration.days);
+                    const overtimeDaysInTwoYears = Math.min(2 * 365, totalServiceDays);
                     if (overtimeDaysInTwoYears > 0) {
                         overtimeDaysPerYearDisplay.classList.remove('hidden');
                         overtimeDaysPerYearInput.value = overtimeDaysInTwoYears.toFixed(0);
@@ -336,7 +354,7 @@
             const endDate = new Date(endDateStr);
 
             if (startDate > endDate) {
-                return { years: 0, months: 0, days: 0 };
+                return { years: -1, months: -1, days: -1 };
             }
 
             let years = endDate.getFullYear() - startDate.getFullYear();
@@ -375,15 +393,16 @@
 
             if (!startDateStr || !endDateStr) {
                 errorMessage.classList.remove('hidden');
-                 showResults();
-                 return;
+                showResults();
+                return;
             }
 
             const duration = calculateDuration(startDateStr, endDateStr);
-            if (duration.years === 0 && duration.months === 0 && duration.days === 0) {
-                 errorMessage.classList.remove('hidden');
-                 showResults();
-                 return;
+            if (duration.years < 0) {
+                errorMessage.innerText = 'تاريخ نهاية الخدمة يجب أن يكون بعد تاريخ بداية الخدمة.';
+                errorMessage.classList.remove('hidden');
+                showResults();
+                return;
             }
 
             const totalServiceDays = (new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24);
@@ -399,6 +418,7 @@
             const salaryInputValue = parseFloat(document.getElementById('salaryInput').value);
             
             if (isNaN(salaryInputValue) || salaryInputValue <= 0) {
+                errorMessage.innerText = 'الرجاء إدخال راتب أو أجر صحيح.';
                 errorMessage.classList.remove('hidden');
                 showResults();
                 return;
@@ -418,7 +438,21 @@
             const isSocialSecurity = document.getElementById('socialSecurity').checked;
             const isArbitraryDismissal = document.getElementById('arbitraryDismissal').checked;
             const isFixedTerm = document.getElementById('fixedTerm').checked;
-            const remainingMonths = parseInt(document.getElementById('remainingMonths').value) || 0;
+            
+            let remainingMonths = 0;
+            if (isFixedTerm) {
+                const contractEndDateStr = document.getElementById('contractEndDate').value;
+                if (endDateStr && contractEndDateStr) {
+                    const workEndDate = new Date(endDateStr);
+                    const contractEndDate = new Date(contractEndDateStr);
+                    if (contractEndDate > workEndDate) {
+                        const diffTime = Math.abs(contractEndDate - workEndDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        remainingMonths = diffDays / 30;
+                    }
+                }
+            }
+
             const overtimeHoursPerDay = parseFloat(document.getElementById('overtimeHoursPerDay').value) || 0;
             const overtimeDaysPerYear = parseFloat(document.getElementById('overtimeDaysPerYear').value) || 0;
             const holidayDays = parseInt(document.getElementById('holidayDays').value) || 0;
@@ -451,16 +485,14 @@
             overtimeCompensationDiv.classList.add('hidden');
             holidayCompensationDiv.classList.add('hidden');
             totalDiv.classList.add('hidden');
-            calculatedLeaveDaysDisplay.classList.add('hidden');
 
             // 1. End of Service Award (مكافأة نهاية الخدمة)
             let serviceAward = 0;
             if (!isSocialSecurity) {
                 serviceAwardDiv.classList.remove('hidden');
                 
-                const fullYearsAward = monthlySalary * duration.years;
-                const fractionalAward = (monthlySalary / 12) * duration.months;
-                serviceAward = fullYearsAward + fractionalAward;
+                const fractionalYears = duration.months / 12 + duration.days / 365.25;
+                serviceAward = monthlySalary * (duration.years + fractionalYears);
                 
                 document.getElementById('serviceAwardAmount').innerText = `${serviceAward.toFixed(2)} دينار`;
                 totalCompensation += serviceAward;
@@ -532,7 +564,7 @@
                 totalDiv.classList.remove('hidden');
                 document.getElementById('totalAmount').innerText = `${totalCompensation.toFixed(2)} دينار`;
             } else {
-                 showMessageBox('لا توجد مستحقات بناءً على المعلومات المدخلة.');
+                showMessageBox('لا توجد مستحقات بناءً على المعلومات المدخلة.');
             }
             
             showResults();
@@ -540,3 +572,8 @@
     </script>
 </body>
 </html>
+
+
+
+
+
