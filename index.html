@@ -173,7 +173,7 @@
                 <p class="text-green-600 text-xl font-bold mt-1" id="dismissalCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
                     *يتم احتساب بدل الفصل التعسفي بناءً على نصف راتب شهر عن كل سنة خدمة (على ألا يقل عن راتب شهرين).
-                    *في حالة العقد محدد المدة، يتم احتساب أجور المدة المتبقية من العقد (الفرق بين تاريخ نهاية العمل وتاريخ نهاية العقد).
+                    *في حالة العقد محدد المدة، يتم احتساب بدل الفصل التعسفي بضرب الراتب الشهري في عدد الأشهر المتبقية من العقد (المدة بين تاريخ نهاية العمل وتاريخ نهاية العقد).
                 </p>
             </div>
 
@@ -212,6 +212,14 @@
             <div id="total" class="hidden">
                 <h3 class="font-semibold text-lg text-gray-800 mt-6">إجمالي المستحقات:</h3>
                 <p class="text-blue-600 text-2xl font-bold mt-1" id="totalAmount"></p>
+            </div>
+            
+            <div id="calculation-notes" class="hidden mt-6 text-sm text-gray-600 border-t pt-4">
+                <h4 class="font-semibold mb-2">ملاحظات على الحساب:</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li id="daily-wage-note" class="hidden">لاحتساب بدلات الفصل التعسفي وشهر الإنذار للعاملين بأجر يومي، تم تقدير الراتب الشهري على أساس 26 يوم عمل.</li>
+                    <li id="daily-award-note" class="hidden">تم احتساب مكافأة نهاية الخدمة لعمال المياومة بضرب الأجر اليومي في 30 لكل سنة خدمة كاملة، بالإضافة إلى أجر كسور السنة المحسوبة يومياً.</li>
+                </ul>
             </div>
 
             <div id="error-message" class="hidden bg-red-100 text-red-700 p-4 rounded-md mt-4">
@@ -307,13 +315,10 @@
                         const startOfLastTwoYears = totalServiceYears - serviceCap;
                         
                         if (startOfLastTwoYears >= 5) {
-                            // The entire last two years of service were at the 21-day rate
                             totalDeservedLeaveDays = serviceCap * 21;
                         } else {
-                            // The rate changed from 14 to 21 within the last two years
                             const yearsAt14Rate = 5 - startOfLastTwoYears;
                             const yearsAt21Rate = totalServiceYears - 5;
-                            
                             totalDeservedLeaveDays = (yearsAt14Rate * 14) + (yearsAt21Rate * 21);
                         }
                     }
@@ -390,7 +395,6 @@
             errorMessage.classList.add('hidden');
             document.getElementById('message-box').classList.add('hidden');
 
-
             if (!startDateStr || !endDateStr) {
                 errorMessage.classList.remove('hidden');
                 showResults();
@@ -413,7 +417,6 @@
             serviceDurationDisplay.classList.remove('hidden');
             calculatedDuration.innerText = `${duration.years} سنة و ${duration.months} شهر و ${duration.days} يوم`;
 
-
             const salaryType = document.querySelector('input[name="salaryType"]:checked').value;
             const salaryInputValue = parseFloat(document.getElementById('salaryInput').value);
             
@@ -426,13 +429,22 @@
 
             let monthlySalary = 0;
             let dailySalary = 0;
+            
+            const calculationNotesDiv = document.getElementById('calculation-notes');
+            const dailyWageNote = document.getElementById('daily-wage-note');
+            const dailyAwardNote = document.getElementById('daily-award-note');
+            calculationNotesDiv.classList.add('hidden');
+            dailyWageNote.classList.add('hidden');
+            dailyAwardNote.classList.add('hidden');
 
             if (salaryType === 'monthly') {
                 monthlySalary = salaryInputValue;
                 dailySalary = monthlySalary / 30;
-            } else {
+            } else { // 'daily'
                 dailySalary = salaryInputValue;
-                monthlySalary = dailySalary * 30;
+                monthlySalary = dailySalary * 26; // Monthly salary for dismissal/notice is based on 26 working days
+                calculationNotesDiv.classList.remove('hidden');
+                dailyWageNote.classList.remove('hidden');
             }
 
             const isSocialSecurity = document.getElementById('socialSecurity').checked;
@@ -463,7 +475,6 @@
             const fridayRate = parseFloat(document.getElementById('fridayRate').value) || 150;
 
             let totalCompensation = 0;
-            const resultsDiv = document.getElementById('results');
             const serviceAwardDiv = document.getElementById('serviceAward');
             const dismissalCompensationDiv = document.getElementById('dismissalCompensation');
             const noticeMonthCompensationDiv = document.getElementById('noticeMonthCompensation');
@@ -475,7 +486,6 @@
             const overtimeRateDisplay = document.getElementById('overtimeRateDisplay');
             const holidayRateDisplay = document.getElementById('holidayRateDisplay');
             const fridayRateDisplay = document.getElementById('fridayRateDisplay');
-
 
             // Reset visibility
             serviceAwardDiv.classList.add('hidden');
@@ -491,8 +501,16 @@
             if (!isSocialSecurity) {
                 serviceAwardDiv.classList.remove('hidden');
                 
-                const fractionalYears = duration.months / 12 + duration.days / 365.25;
-                serviceAward = monthlySalary * (duration.years + fractionalYears);
+                if (salaryType === 'daily') {
+                    const awardForFullYears = duration.years * (dailySalary * 30);
+                    const fractionalDays = (duration.months * 30) + duration.days;
+                    const awardForFractionalYear = fractionalDays * dailySalary;
+                    serviceAward = awardForFullYears + awardForFractionalYear;
+                    dailyAwardNote.classList.remove('hidden');
+                } else { // 'monthly'
+                    const fractionalYears = duration.months / 12 + duration.days / 365.25;
+                    serviceAward = monthlySalary * (duration.years + fractionalYears);
+                }
                 
                 document.getElementById('serviceAwardAmount').innerText = `${serviceAward.toFixed(2)} دينار`;
                 totalCompensation += serviceAward;
@@ -572,8 +590,4 @@
     </script>
 </body>
 </html>
-
-
-
-
 
