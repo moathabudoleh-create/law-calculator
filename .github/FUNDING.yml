@@ -1,2 +1,15 @@
-github: [MUA992]
-paypal: [https://www.paypal.me/MUA992] 
+# This file is used by GitHub to automatically display a "Sponsor" button on your repository page.
+# (يستخدم هذا الملف بواسطة جيت هب لعرض زر "الدعم/التمويل" تلقائيًا على صفحة المستودع الخاص بك.)
+
+# GitHub username to display a link to your GitHub Sponsors profile (if applicable):
+# (اسم مستخدم جيت هب لعرض رابط لصفحة الرعاية الخاصة بك):
+github: MUA992
+
+# PayPal.Me username or email address (فقط اسم المستخدم أو البريد الإلكتروني):
+paypal: MUA992
+
+# You can add other funding platforms here if needed.
+# (يمكنك إضافة منصات تمويل أخرى هنا إذا لزم الأمر.)
+# For example:
+# open_collective: community-name
+# patreon: user-or-org
