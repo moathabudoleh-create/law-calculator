@@ -225,7 +225,14 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل الإجازات السنوية:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="leaveCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    * يتم حسابها بضرب عدد أيام الإجازات المستحقة في الأجر اليومي، وبمجموع لا يتجاوز آخر سنتين من الخدمة، مع تطبيق معدل الإجازات **14 يوماً للسنوات الأقل من خمس** و **21 يوماً للسنوات الخمس وما فوق**.
+                    * يتم حسابها بضرب عدد أيام الإجازات المستحقة في الأجر اليومي، وبمجموع لا يتجاوز **آخر سنتين** من الخدمة.
+                    <br>
+                    * تطبق معادلة احتساب الإجازات بشكل نسبي (كسور السنة) باستخدام **365 يوماً** في السنة، والنتيجة النهائية لعدد الأيام يتم **تقريبها لأقرب عدد صحيح**:
+                        <ul>
+                            <li>**14 يوماً** عن كل سنة خدمة لم يكمل فيها العامل خمس سنوات.</li>
+                            <li>**21 يوماً** عن كل سنة خدمة أكمل فيها العامل خمس سنوات أو أكثر.</li>
+                        </ul>
+                    * **ملاحظة:** إذا كانت مدة الخدمة خمس سنوات أو أكثر، فإن السنة التي تلي إكمال أربع سنوات تحسب بمعدل $21$ يوماً، والسنة التي تسبقها تحسب بمعدل $14$ يوماً.
                 </p>
             </div>
             
@@ -450,7 +457,7 @@
         }
 
         const MS_IN_DAY = 1000 * 60 * 60 * 24;
-        const DAYS_IN_YEAR_LEAVE = 365.25;
+        const DAYS_IN_YEAR_LEAVE = 365; // تم التعديل إلى 365 كما طلب المستخدم
 
         function updateDurationAndLeaveAndOvertimeDisplay() {
             const startDateInput = document.getElementById('startDate');
@@ -469,8 +476,6 @@
             
             const remainingContractDurationDisplay = document.getElementById('remainingContractDurationDisplay');
             const calculatedRemainingDuration = document.getElementById('calculatedRemainingDuration');
-
-            // لا نستخدم هذه الدالة لتطبيق/إزالة الحدود الآن، بل يتم ذلك في checkDateValidityAndDisplay
 
             remainingContractDurationDisplay.classList.add('hidden');
             calculatedRemainingDuration.innerText = '';
@@ -554,20 +559,23 @@
                     let totalDeservedLeaveDays = 0;
 
                     if (D_service > 0) {
-                        // احتساب كسور السنة لكل فترة بناءً على 365.25 يوماً
-                        // إذا كانت مدة الخدمة الكلية أقل من 4 سنوات، فإن daysAt21Rate ستكون صفر دائماً.
-                        const leaveFrom14 = daysAt14Rate * (14 / DAYS_IN_YEAR_LEAVE);
-                        const leaveFrom21 = daysAt21Rate * (21 / DAYS_IN_YEAR_LEAVE);
+                        // استخدام 365 يوماً في السنة (حسب الطلب)
+                        const LEAVE_DAYS_PER_YEAR = 365; 
+                        
+                        const leaveFrom14 = daysAt14Rate * (14 / LEAVE_DAYS_PER_YEAR);
+                        const leaveFrom21 = daysAt21Rate * (21 / LEAVE_DAYS_PER_YEAR);
                         
                         totalDeservedLeaveDays = leaveFrom14 + leaveFrom21;
                     }
                     
+                    // تطبيق التقريب لأقرب عدد صحيح (حسب الطلب)
+                    const roundedLeaveDays = Math.round(totalDeservedLeaveDays);
+                    
                     // --- نهاية منطق احتساب الإجازات المحدث ---
 
-                    if (totalDeservedLeaveDays > 0) {
+                    if (roundedLeaveDays > 0) {
                         calculatedLeaveDaysDisplay.classList.remove('hidden');
-                        // نطبق التقريب لأقرب عدد صحيح
-                        calculatedLeaveDaysInput.value = Math.round(totalDeservedLeaveDays);
+                        calculatedLeaveDaysInput.value = roundedLeaveDays;
                     } else {
                         calculatedLeaveDaysDisplay.classList.add('hidden');
                         calculatedLeaveDaysInput.value = '';
