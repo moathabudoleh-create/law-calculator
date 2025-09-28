@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حاسبة الحقوق العمالية</title>
+    <!-- Google AdSense Code -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3772059497395785"
+     crossorigin="anonymous"></script> 
+    <!-- End AdSense Code -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
@@ -19,16 +23,26 @@
             color: #1d4ed8;
             font-weight: bold;
         }
+        /* Style for disabled checkbox */
+        #fixedTerm:disabled + label {
+            color: #9ca3af; /* Gray out text */
+            cursor: not-allowed;
+        }
     </style>
+    <!-- تضمين مكتبة MathJax لعرض المعادلات الرياضية بصيغة LaTeX -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body class="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
 
-    <div class="relative bg-white rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
-        <div class="absolute top-4 left-4 text-left text-xs text-gray-500">
-            <p>المحامي معاذ ابو دوله</p>
-            <p>0788898842</p>
-        </div>
-
+    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
+        
         <h1 class="text-3xl font-bold text-center text-blue-800 mb-6">حاسبة الحقوق العمالية</h1>
         <p class="text-center text-gray-600 mb-8">
             بناءً على قانون العمل الأردني. أدخل معلوماتك لحساب مستحقاتك.
@@ -79,7 +93,7 @@
                     <!-- New section for calculated leave days with an editable input field -->
                     <div id="calculatedLeaveDaysDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
                         <label for="calculatedLeaveDays" class="text-sm font-medium text-blue-700">
-                            عدد أيام الإجازات السنوية المحتسبة (يمكنك التعديل):
+                            عدد أيام الإجازات السنوية المحتسبة (بحد أقصى سنتين - يمكنك التعديل):
                         </label>
                         <input type="number" id="calculatedLeaveDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     </div>
@@ -100,13 +114,19 @@
                 <input type="checkbox" id="fixedTerm" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                 <label for="fixedTerm" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد محدد المدة)</label>
             </div>
+
+            <!-- Notice Compensation Entitlement (تم تبسيط النص) -->
+            <div class="flex items-center">
+                <input type="checkbox" id="noticeCompensationEntitlement" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="noticeCompensationEntitlement" class="ml-2 block text-sm font-medium text-gray-700">يستحق بدل شهر الإشعار</label>
+            </div>
             
             <!-- Overtime Input Group -->
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">العمل الإضافي</label>
                 <div class="flex items-end space-x-2 space-x-reverse">
                     <div class="flex-grow">
-                        <label for="overtimeHoursPerDay" class="block text-sm font-medium text-gray-700">ساعات العمل اليومي</label>
+                        <label for="overtimeHoursPerDay" class="block text-sm font-medium text-gray-700">ساعات العمل اليومي الإضافية</label>
                         <input type="number" id="overtimeHoursPerDay" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل عدد الساعات">
                     </div>
                     <div class="flex-shrink-0 w-28">
@@ -152,9 +172,16 @@
 
         </div>
 
-        <button onclick="calculateRights()" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-            احسب المستحقات
-        </button>
+        <!-- Action Buttons (Now side-by-side using flex) -->
+        <div class="mt-8 flex gap-4">
+            <button onclick="calculateRights()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                احسب المستحقات
+            </button>
+            <button onclick="resetFields()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                تفريغ جميع الحقول
+            </button>
+        </div>
+
 
         <!-- Results Section -->
         <div id="results" class="mt-8 space-y-4">
@@ -164,7 +191,7 @@
                 <h3 class="font-semibold text-lg text-gray-800">مكافأة نهاية الخدمة:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="serviceAwardAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يتم احتساب هذه المكافأة بناءً على راتب شهر كامل عن كل سنة خدمة كاملة، وراتب نسبي عن كسور السنة.
+                    * يتم احتساب المكافأة للعاملين بأجر يومي على أساس: (الأجر اليومي $\times 30 \times$ عدد سنوات الخدمة الكاملة) + (الأجر اليومي $\times$ عدد كسور السنة).
                 </p>
             </div>
 
@@ -172,8 +199,10 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل الفصل التعسفي:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="dismissalCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يتم احتساب بدل الفصل التعسفي بناءً على نصف راتب شهر عن كل سنة خدمة (على ألا يقل عن راتب شهرين).
-                    *في حالة العقد محدد المدة، يتم احتساب بدل الفصل التعسفي بضرب الراتب الشهري في عدد الأشهر المتبقية من العقد (المدة بين تاريخ نهاية العمل وتاريخ نهاية العقد).
+                    * **للعقد غير محدد المدة:** يُحتسب بناءً على المعادلة التالية، بحد أدنى راتب شهرين:
+                    <br>
+                    $$\left(\frac{1}{2} \times \text{الراتب الشهري}\right) \times \left(\frac{\text{عدد أيام الخدمة}}{\text{365 يوم}}\right)$$
+                    * **للعقد محدد المدة:** يُحتسب بضرب الراتب الشهري في عدد الأشهر المتبقية من العقد.
                 </p>
             </div>
 
@@ -181,7 +210,7 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل شهر الإشعار:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="noticeMonthCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يستحق العامل راتب شهر كبدل إشعار في حالة الفصل التعسفي لعقد غير محدد المدة.
+                    *يتم احتساب بدل الإشعار (راتب شهر واحد، ويقدر بـ الأجر اليومي $\times 30$) إذا تم اختياره من خيارات الحساب.
                 </p>
             </div>
             
@@ -189,7 +218,7 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل الإجازات السنوية:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="leaveCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يتم حسابها بناءً على مدة الخدمة. يستحق العامل 14 يومًا عن كل سنة إذا كانت خدمته أقل من 5 سنوات، و 21 يومًا إذا كانت خدمته 5 سنوات أو أكثر. يتم حساب كسور السنة، وبمجموع لا يتجاوز آخر سنتين.
+                    *يتم حسابها على أساس: (مجموع أيام الإجازات المستحقة $\times$ الأجر اليومي)، وبمجموع لا يتجاوز آخر سنتين، مع تطبيق معدل الإجازات **14 يوماً للسنوات الأقل من خمس** و **21 يوماً للسنوات الخمس وما فوق**، كما طلبت.
                 </p>
             </div>
             
@@ -197,7 +226,7 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل ساعات العمل الإضافي:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="overtimeCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يستحق العامل <span id="overtimeRateDisplay">125%</span> من أجر الساعة لكل ساعة عمل إضافي، لمدة لا تتجاوز سنتين.
+                    *يُحتسب البدل على أساس: $$\text{مجموع الساعات الإضافية} \times \left(\frac{\text{الأجر اليومي}}{8}\right) \times 125\%$$، عن مجموع الساعات التي لم تُدفع **لآخر سنتين** من الخدمة.
                 </p>
             </div>
 
@@ -205,7 +234,7 @@
                 <h3 class="font-semibold text-lg text-gray-800">بدل دوام العطل والأعياد وأيام الجمع:</h3>
                 <p class="text-green-600 text-xl font-bold mt-1" id="holidayCompensationAmount"></p>
                 <p class="text-sm text-gray-500 mt-1">
-                    *يستحق العامل <span id="holidayRateDisplay">150%</span> من الأجر اليومي عن كل يوم عمل في العطل الرسمية و <span id="fridayRateDisplay">150%</span> عن أيام الجمع، لمدة لا تتجاوز سنتين.
+                    *يُحتسب البدل على أساس: $$\text{عدد الأيام} \times \text{الأجر اليومي} \times \text{النسبة}$$، حيث النسبة الافتراضية هي <span id="holidayRateDisplay">150%</span> للعطل و <span id="fridayRateDisplay">150%</span> لأيام الجمع. و يُدفع هذا البدل **بالإضافة إلى الأجر اليومي الأساسي**، ويُحتسب عن الأيام التي لم تُدفع **لآخر سنتين** من الخدمة.
                 </p>
             </div>
 
@@ -217,11 +246,18 @@
             <div id="calculation-notes" class="hidden mt-6 text-sm text-gray-600 border-t pt-4">
                 <h4 class="font-semibold mb-2">ملاحظات على الحساب:</h4>
                 <ul class="list-disc list-inside space-y-1">
-                    <li id="daily-wage-note" class="hidden">لاحتساب بدلات الفصل التعسفي وشهر الإنذار للعاملين بأجر يومي، تم تقدير الراتب الشهري على أساس 26 يوم عمل.</li>
-                    <li id="daily-award-note" class="hidden">تم احتساب مكافأة نهاية الخدمة لعمال المياومة بضرب الأجر اليومي في 30 لكل سنة خدمة كاملة، بالإضافة إلى أجر كسور السنة المحسوبة يومياً.</li>
+                    <li id="daily-wage-note" class="hidden">لاحتساب بدلات الفصل التعسفي وشهر الإنذار للعاملين بأجر يومي، تم تقدير الراتب الشهري على أساس الأجر اليومي $\times 30$ يوم.</li>
+                    <li id="daily-award-note" class="hidden">تم احتساب مكافأة نهاية الخدمة لعمال المياومة بضرب الأجر اليومي في 30 لكل سنة خدمة كاملة، بالإضافة إلى أجر كسور السنة المحسوبة على أساس 30 يوماً للشهر.</li>
                 </ul>
             </div>
-
+            
+            <!-- Contact and Copyright Info (Updated as requested) -->
+            <div class="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
+                <p class="text-gray-700 font-semibold mb-1">المحامي معاذ ابو دوله هاتف 0788898842</p>
+                <hr class="my-2 border-gray-300 w-1/2 mx-auto" />
+                <p class="text-xs">حقوق الملكية محفوظة</p>
+            </div>
+            
             <div id="error-message" class="hidden bg-red-100 text-red-700 p-4 rounded-md mt-4">
                 <p>الرجاء إدخال راتب شهري أو يومي ومدة خدمة صالحة.</p>
             </div>
@@ -234,17 +270,17 @@
             const salaryTypeRadios = document.getElementsByName('salaryType');
             const salaryLabel = document.getElementById('salaryLabel');
             const salaryInput = document.getElementById('salaryInput');
-            const startDateInput = document.getElementById('startDate');
-            const endDateInput = document.getElementById('endDate');
-            const overtimeRateInput = document.getElementById('overtimeRate');
-            const holidayRateInput = document.getElementById('holidayRate');
-            const fridayRateInput = document.getElementById('fridayRate');
-            const overtimeRateDisplay = document.getElementById('overtimeRateDisplay');
-            const holidayRateDisplay = document.getElementById('holidayRateDisplay');
-            const fridayRateDisplay = document.getElementById('fridayRateDisplay');
+            const fixedTermCheckbox = document.getElementById('fixedTerm');
+            const arbitraryDismissalCheckbox = document.getElementById('arbitraryDismissal');
+            const contractEndDateInputDiv = document.getElementById('contractEndDateInput');
+
+            // Initial setup for fixedTerm on load (assumes monthly is checked initially)
+            fixedTermCheckbox.disabled = false;
 
             salaryTypeRadios.forEach(radio => {
                 radio.addEventListener('change', () => {
+                    const isDaily = radio.value === 'daily';
+                    
                     if (radio.value === 'monthly') {
                         salaryLabel.innerText = 'الراتب الشهري الأخير (دينار)';
                         salaryInput.placeholder = 'أدخل راتبك الشهري';
@@ -252,39 +288,116 @@
                         salaryLabel.innerText = 'الأجر اليومي الأخير (دينار)';
                         salaryInput.placeholder = 'أدخل أجرك اليومي';
                     }
+
+                    // تطبيق منطق التعطيل (Disabling Logic)
+                    if (isDaily) {
+                        fixedTermCheckbox.disabled = true;
+                        fixedTermCheckbox.checked = false; // إلغاء تحديدها إذا كانت محددة
+                        contractEndDateInputDiv.classList.add('hidden'); // إخفاء حقل نهاية العقد
+                    } else {
+                        fixedTermCheckbox.disabled = false;
+                    }
                 });
             });
 
-            document.getElementById('fixedTerm').addEventListener('change', function() {
-                const contractEndDateInput = document.getElementById('contractEndDateInput');
+            fixedTermCheckbox.addEventListener('change', function() {
                 if (this.checked) {
-                    contractEndDateInput.classList.remove('hidden');
-                    document.getElementById('arbitraryDismissal').checked = false;
+                    contractEndDateInputDiv.classList.remove('hidden');
+                    arbitraryDismissalCheckbox.checked = false;
                 } else {
-                    contractEndDateInput.classList.add('hidden');
+                    contractEndDateInputDiv.classList.add('hidden');
                 }
             });
 
-            document.getElementById('arbitraryDismissal').addEventListener('change', function() {
+            arbitraryDismissalCheckbox.addEventListener('change', function() {
                 if (this.checked) {
-                    document.getElementById('fixedTerm').checked = false;
-                    document.getElementById('contractEndDateInput').classList.add('hidden');
+                    fixedTermCheckbox.checked = false;
+                    contractEndDateInputDiv.classList.add('hidden');
                 }
             });
 
-            startDateInput.addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
-            endDateInput.addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
-            overtimeRateInput.addEventListener('input', () => {
-                overtimeRateDisplay.innerText = overtimeRateInput.value + '%';
+            document.getElementById('startDate').addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
+            document.getElementById('endDate').addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
+            
+            // Update rate display in the results description when input changes
+            document.getElementById('overtimeRate').addEventListener('input', () => {
+                document.getElementById('overtimeRateDisplay').innerText = document.getElementById('overtimeRate').value + '%';
             });
-            holidayRateInput.addEventListener('input', () => {
-                holidayRateDisplay.innerText = holidayRateInput.value + '%';
+            document.getElementById('holidayRate').addEventListener('input', () => {
+                document.getElementById('holidayRateDisplay').innerText = document.getElementById('holidayRate').value + '%';
             });
-            fridayRateInput.addEventListener('input', () => {
-                fridayRateDisplay.innerText = fridayRateInput.value + '%';
+            document.getElementById('fridayRate').addEventListener('input', () => {
+                document.getElementById('fridayRateDisplay').innerText = document.getElementById('fridayRate').value + '%';
             });
         });
         
+        /**
+         * دالة لتفريغ جميع حقول الإدخال والنتائج وإعادة تعيين الحالات الافتراضية
+         */
+        function resetFields() {
+            // 1. Inputs and Dates
+            document.getElementById('salaryInput').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('contractEndDate').value = '';
+            document.getElementById('overtimeHoursPerDay').value = '';
+            document.getElementById('holidayDays').value = '';
+            document.getElementById('fridayDays').value = '';
+            
+            // 2. Checkboxes and Radios (set to default state: monthly checked, others unchecked)
+            document.getElementById('monthly').checked = true;
+            document.getElementById('daily').checked = false;
+            document.getElementById('socialSecurity').checked = false;
+            document.getElementById('arbitraryDismissal').checked = false;
+            document.getElementById('fixedTerm').checked = false;
+            document.getElementById('noticeCompensationEntitlement').checked = false;
+            
+            // Re-enable fixedTerm checkbox based on default (monthly)
+            document.getElementById('fixedTerm').disabled = false;
+
+            // Reset rate defaults (if changed by user)
+            document.getElementById('overtimeRate').value = '125';
+            document.getElementById('holidayRate').value = '150';
+            document.getElementById('fridayRate').value = '150';
+            
+            // 3. Calculated Inputs and Display areas (hide and clear content)
+            document.getElementById('contractEndDateInput').classList.add('hidden');
+            document.getElementById('serviceDurationDisplay').classList.add('hidden');
+            document.getElementById('calculatedLeaveDaysDisplay').classList.add('hidden');
+            document.getElementById('overtimeDaysPerYearDisplay').classList.add('hidden');
+            
+            document.getElementById('calculatedDuration').innerText = '';
+            document.getElementById('calculatedLeaveDays').value = '';
+            document.getElementById('overtimeDaysPerYear').value = '';
+
+            // 4. Results Section (hide all and clear text)
+            const resultsDivs = [
+                'serviceAward', 'dismissalCompensation', 'noticeMonthCompensation', 
+                'leaveCompensation', 'overtimeCompensationDiv', 'holidayCompensationDiv', 
+                'total', 'calculation-notes', 'error-message', 'message-box'
+            ];
+            
+            resultsDivs.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+            document.getElementById('serviceAwardAmount').innerText = '';
+            document.getElementById('dismissalCompensationAmount').innerText = '';
+            document.getElementById('noticeMonthCompensationAmount').innerText = '';
+            document.getElementById('leaveCompensationAmount').innerText = '';
+            document.getElementById('overtimeCompensationAmount').innerText = '';
+            document.getElementById('holidayCompensationAmount').innerText = '';
+            document.getElementById('totalAmount').innerText = '';
+
+            // Reset salary label to default monthly
+            document.getElementById('salaryLabel').innerText = 'الراتب الشهري الأخير (دينار)';
+            document.getElementById('salaryInput').placeholder = 'أدخل راتبك الشهري';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const MS_IN_DAY = 1000 * 60 * 60 * 24;
+        const DAYS_IN_YEAR_LEAVE = 365.25;
+
         function updateDurationAndLeaveAndOvertimeDisplay() {
             const startDateStr = document.getElementById('startDate').value;
             const endDateStr = document.getElementById('endDate').value;
@@ -302,35 +415,67 @@
                     serviceDurationDisplay.classList.remove('hidden');
                     calculatedDuration.innerText = `${duration.years} سنة و ${duration.months} شهر و ${duration.days} يوم`;
                     
-                    const totalServiceDays = (new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24);
-                    const totalServiceYears = totalServiceDays / 365.25;
+                    // --- منطق احتساب الإجازات المحدث (حسب مدة الخدمة ومجموع سنتين كحد أقصى) ---
+                    const T_start_date = new Date(startDateStr);
+                    const T_end_date = new Date(endDateStr);
+                    const D_service = (T_end_date - T_start_date) / MS_IN_DAY; // مجموع أيام الخدمة الفعلية
+
+                    // 1. نقطة التحول: تاريخ إكمال 4 سنوات (بداية السنة الخامسة)
+                    const T_4y_date = new Date(T_start_date);
+                    T_4y_date.setFullYear(T_start_date.getFullYear() + 4);
+
+                    // 2. تاريخ بداية فترة التعويض (سنتان قبل تاريخ النهاية)
+                    const T_2y_date = new Date(T_end_date);
+                    T_2y_date.setFullYear(T_end_date.getFullYear() - 2);
+
+                    // 3. التاريخ الفعلي لبدء فترة التعويض (الأبعد بين تاريخ البدء الفعلي وتاريخ سنتين للوراء)
+                    const T_comp_start_time = Math.max(T_start_date.getTime(), T_2y_date.getTime());
+                    
+                    let daysAt14Rate = 0; // الأيام التي تستحق 14 يومًا في آخر سنتين (قبل إكمال 4 سنوات)
+                    let daysAt21Rate = 0; // الأيام التي تستحق 21 يومًا في آخر سنتين (منذ إكمال 4 سنوات فصاعداً)
+
+                    // الفترة المستحقة لـ 14 يومًا تنتهي عند T_4y_date
+                    const T_14_end_time = Math.min(T_end_date.getTime(), T_4y_date.getTime());
+
+                    if (T_comp_start_time < T_14_end_time) {
+                        // حساب الأيام المستحقة لـ 14 يومًا: من بدء التعويض حتى 4 سنوات (أو نهاية الخدمة، أيهما أقرب)
+                        daysAt14Rate = (T_14_end_time - T_comp_start_time) / MS_IN_DAY;
+                    }
+
+                    // الفترة المستحقة لـ 21 يومًا تبدأ من T_4y_date
+                    const T_21_start_time = Math.max(T_comp_start_time, T_4y_date.getTime());
+
+                    if (T_21_start_time < T_end_date.getTime()) {
+                        // حساب الأيام المستحقة لـ 21 يومًا: من 4 سنوات (أو بدء التعويض، أيهما أبعد) حتى نهاية الخدمة
+                        daysAt21Rate = (T_end_date.getTime() - T_21_start_time) / MS_IN_DAY;
+                    }
 
                     let totalDeservedLeaveDays = 0;
-                    const serviceCap = 2; // Maximum years of leave accumulation
 
-                    if (totalServiceYears <= 5) {
-                        const leaveYears = Math.min(totalServiceYears, serviceCap);
-                        totalDeservedLeaveDays = leaveYears * 14;
-                    } else { // totalServiceYears > 5
-                        const startOfLastTwoYears = totalServiceYears - serviceCap;
+                    if (D_service > 0) {
+                        // احتساب كسور السنة لكل فترة بناءً على 365.25 يوماً
+                        // إذا كانت مدة الخدمة الكلية أقل من 4 سنوات، فإن daysAt21Rate ستكون صفر دائماً.
+                        const leaveFrom14 = daysAt14Rate * (14 / DAYS_IN_YEAR_LEAVE);
+                        const leaveFrom21 = daysAt21Rate * (21 / DAYS_IN_YEAR_LEAVE);
                         
-                        if (startOfLastTwoYears >= 5) {
-                            totalDeservedLeaveDays = serviceCap * 21;
-                        } else {
-                            const yearsAt14Rate = 5 - startOfLastTwoYears;
-                            const yearsAt21Rate = totalServiceYears - 5;
-                            totalDeservedLeaveDays = (yearsAt14Rate * 14) + (yearsAt21Rate * 21);
-                        }
+                        totalDeservedLeaveDays = leaveFrom14 + leaveFrom21;
                     }
+                    
+                    // --- نهاية منطق احتساب الإجازات المحدث ---
 
                     if (totalDeservedLeaveDays > 0) {
                         calculatedLeaveDaysDisplay.classList.remove('hidden');
-                        calculatedLeaveDaysInput.value = totalDeservedLeaveDays.toFixed(2);
+                        // نطبق التقريب لأقرب عدد صحيح
+                        calculatedLeaveDaysInput.value = Math.round(totalDeservedLeaveDays);
                     } else {
                         calculatedLeaveDaysDisplay.classList.add('hidden');
                     }
 
-                    const overtimeDaysInTwoYears = Math.min(2 * 365, totalServiceDays);
+                    // حساب عدد الأيام الإجمالي في مدة الخدمة بحد أقصى سنتين لغرض تقدير العمل الإضافي
+                    const maxOvertimeDays = 2 * 365;
+                    const overtimeDaysInTwoYears = Math.min(maxOvertimeDays, D_service);
+                    
+                    // نقوم بعرض عدد الأيام التي يستحق عنها العامل البدل بحد أقصى سنتين
                     if (overtimeDaysInTwoYears > 0) {
                         overtimeDaysPerYearDisplay.classList.remove('hidden');
                         overtimeDaysPerYearInput.value = overtimeDaysInTwoYears.toFixed(0);
@@ -354,6 +499,12 @@
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
 
+        /**
+         * تحسب فرق التاريخ بالسنوات والأشهر والأيام بدقة (حسب التقويم الميلادي).
+         * @param {string} startDateStr - تاريخ البداية (YYYY-MM-DD).
+         * @param {string} endDateStr - تاريخ النهاية (YYYY-MM-DD).
+         * @returns {object} - يحتوي على سنوات وأشهر وأيام الخدمة.
+         */
         function calculateDuration(startDateStr, endDateStr) {
             const startDate = new Date(startDateStr);
             const endDate = new Date(endDateStr);
@@ -367,12 +518,15 @@
             let days = endDate.getDate() - startDate.getDate();
 
             if (days < 0) {
+                // اقتراض يوم من الشهر السابق
                 months--;
+                // تحديد عدد أيام الشهر السابق الفعلي (صفر لليوم يعطي آخر يوم في الشهر السابق)
                 const prevMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
-                days += prevMonth.getDate();
+                days += prevMonth.getDate(); 
             }
 
             if (months < 0) {
+                // اقتراض شهر من السنة السابقة
                 years--;
                 months += 12;
             }
@@ -396,6 +550,7 @@
             document.getElementById('message-box').classList.add('hidden');
 
             if (!startDateStr || !endDateStr) {
+                errorMessage.innerText = 'الرجاء إدخال تاريخ بداية العمل وتاريخ نهاية العمل.';
                 errorMessage.classList.remove('hidden');
                 showResults();
                 return;
@@ -410,7 +565,7 @@
             }
 
             const totalServiceDays = (new Date(endDateStr) - new Date(startDateStr)) / (1000 * 60 * 60 * 24);
-            const totalServiceYears = totalServiceDays / 365.25;
+            const serviceYearsForDismissal = totalServiceDays / 365; // يستخدم 365 لتطبيق معادلة الفصل التعسفي حسب طلب المستخدم
             
             const serviceDurationDisplay = document.getElementById('serviceDurationDisplay');
             const calculatedDuration = document.getElementById('calculatedDuration');
@@ -439,10 +594,11 @@
 
             if (salaryType === 'monthly') {
                 monthlySalary = salaryInputValue;
-                dailySalary = monthlySalary / 30;
+                dailySalary = monthlySalary / 30; // الأجر اليومي = الراتب الشهري / 30
             } else { // 'daily'
                 dailySalary = salaryInputValue;
-                monthlySalary = dailySalary * 26; // Monthly salary for dismissal/notice is based on 26 working days
+                // راتب شهري تقديري لأغراض الفصل التعسفي وبدل شهر الإشعار
+                monthlySalary = dailySalary * 30; 
                 calculationNotesDiv.classList.remove('hidden');
                 dailyWageNote.classList.remove('hidden');
             }
@@ -450,6 +606,7 @@
             const isSocialSecurity = document.getElementById('socialSecurity').checked;
             const isArbitraryDismissal = document.getElementById('arbitraryDismissal').checked;
             const isFixedTerm = document.getElementById('fixedTerm').checked;
+            const isEntitledToNotice = document.getElementById('noticeCompensationEntitlement').checked; 
             
             let remainingMonths = 0;
             if (isFixedTerm) {
@@ -466,7 +623,7 @@
             }
 
             const overtimeHoursPerDay = parseFloat(document.getElementById('overtimeHoursPerDay').value) || 0;
-            const overtimeDaysPerYear = parseFloat(document.getElementById('overtimeDaysPerYear').value) || 0;
+            const overtimeDays = parseFloat(document.getElementById('overtimeDaysPerYear').value) || 0; 
             const holidayDays = parseInt(document.getElementById('holidayDays').value) || 0;
             const fridayDays = parseInt(document.getElementById('fridayDays').value) || 0;
             
@@ -483,9 +640,6 @@
             const holidayCompensationDiv = document.getElementById('holidayCompensationDiv');
             const totalDiv = document.getElementById('total');
             const calculatedLeaveDaysDisplay = document.getElementById('calculatedLeaveDaysDisplay');
-            const overtimeRateDisplay = document.getElementById('overtimeRateDisplay');
-            const holidayRateDisplay = document.getElementById('holidayRateDisplay');
-            const fridayRateDisplay = document.getElementById('fridayRateDisplay');
 
             // Reset visibility
             serviceAwardDiv.classList.add('hidden');
@@ -502,14 +656,20 @@
                 serviceAwardDiv.classList.remove('hidden');
                 
                 if (salaryType === 'daily') {
+                    // الاحتساب لعمال الأجر اليومي: (الأجر اليومي × 30 × عدد سنوات الخدمة الكاملة) + (الأجر اليومي × عدد كسور السنة)
                     const awardForFullYears = duration.years * (dailySalary * 30);
-                    const fractionalDays = (duration.months * 30) + duration.days;
-                    const awardForFractionalYear = fractionalDays * dailySalary;
+                    const totalFractionalDays = (duration.months * 30) + duration.days;
+                    const awardForFractionalYear = totalFractionalDays * dailySalary;
+                    
                     serviceAward = awardForFullYears + awardForFractionalYear;
                     dailyAwardNote.classList.remove('hidden');
                 } else { // 'monthly'
-                    const fractionalYears = duration.months / 12 + duration.days / 365.25;
-                    serviceAward = monthlySalary * (duration.years + fractionalYears);
+                    // للراتب الشهري: راتب شهر عن كل سنة + راتب نسبي عن كسور السنة
+                    const fullYearsAward = monthlySalary * duration.years;
+                    const averageDaysPerMonth = 365.25 / 12; 
+                    const fractionalDaysTotal = (duration.months * averageDaysPerMonth) + duration.days;
+                    const fractionalAward = monthlySalary * (fractionalDaysTotal / 365.25);
+                    serviceAward = fullYearsAward + fractionalAward;
                 }
                 
                 document.getElementById('serviceAwardAmount').innerText = `${serviceAward.toFixed(2)} دينار`;
@@ -518,35 +678,44 @@
 
             // 2. Arbitrary Dismissal Compensation (بدل الفصل التعسفي)
             let dismissalCompensation = 0;
-            let noticeMonthCompensation = 0;
 
             if (isArbitraryDismissal && !isFixedTerm) {
                 dismissalCompensationDiv.classList.remove('hidden');
-                noticeMonthCompensationDiv.classList.remove('hidden');
 
-                const calculatedAmount = (monthlySalary / 2) * totalServiceYears;
+                // Logic for indefinite contract: (Monthly Salary / 2) * Service Years (based on 365 days), minimum 2 months salary
+                const calculatedAmount = (monthlySalary / 2) * serviceYearsForDismissal; // **تطبيق المعادلة بـ 365 يوم**
                 dismissalCompensation = Math.max(calculatedAmount, monthlySalary * 2);
                 document.getElementById('dismissalCompensationAmount').innerText = `${dismissalCompensation.toFixed(2)} دينار`;
                 totalCompensation += dismissalCompensation;
 
-                noticeMonthCompensation = monthlySalary;
-                document.getElementById('noticeMonthCompensationAmount').innerText = `${noticeMonthCompensation.toFixed(2)} دينار`;
-                totalCompensation += noticeMonthCompensation;
-
             } else if (isFixedTerm && remainingMonths > 0) {
                 dismissalCompensationDiv.classList.remove('hidden');
+                // Logic for fixed-term contract: Monthly salary * remaining months
                 dismissalCompensation = monthlySalary * remainingMonths;
                 document.getElementById('dismissalCompensationAmount').innerText = `${dismissalCompensation.toFixed(2)} دينار`;
                 totalCompensation += dismissalCompensation;
             }
 
+            // 2.5. Notice Month Compensation (بدل شهر الإشعار)
+            let noticeMonthCompensation = 0;
+            if (isEntitledToNotice) {
+                noticeMonthCompensationDiv.classList.remove('hidden');
+                // يستخدم هنا الراتب الشهري المقدر (dailySalary * 30)
+                noticeMonthCompensation = monthlySalary; 
+                document.getElementById('noticeMonthCompensationAmount').innerText = `${noticeMonthCompensation.toFixed(2)} دينار`;
+                totalCompensation += noticeMonthCompensation;
+            }
+
+
             // 3. Unused Annual Leave (بدل الإجازات السنوية)
-            const unusedLeaveDays = parseFloat(document.getElementById('calculatedLeaveDays').value) || 0;
+            // نأخذ القيمة من حقل الإدخال بعد التقريب أو التعديل من قبل المستخدم
+            const unusedLeaveDays = parseFloat(document.getElementById('calculatedLeaveDays').value) || 0; 
             let leaveCompensation = 0;
             if (unusedLeaveDays > 0) {
                 leaveCompensationDiv.classList.remove('hidden');
                 calculatedLeaveDaysDisplay.classList.remove('hidden');
                 
+                // المعادلة: (مجموع أيام الإجازات المستحقة) × (الأجر اليومي)
                 leaveCompensation = dailySalary * unusedLeaveDays;
                 document.getElementById('leaveCompensationAmount').innerText = `${leaveCompensation.toFixed(2)} دينار`;
                 totalCompensation += leaveCompensation;
@@ -555,14 +724,16 @@
             // 4. Overtime Compensation (بدل العمل الإضافي)
             let overtimeCompensation = 0;
             const overtimeHours = parseFloat(document.getElementById('overtimeHoursPerDay').value) || 0;
-            const overtimeDays = parseFloat(document.getElementById('overtimeDaysPerYear').value) || 0;
             
             if (overtimeHours > 0 && overtimeDays > 0) {
                 overtimeCompensationDiv.classList.remove('hidden');
-                const hourlySalary = dailySalary / 8;
+                // أجر الساعة: الأجر اليومي / 8
+                const hourlySalary = dailySalary / 8; 
+                // الحساب: مجموع الساعات (ساعات باليوم * أيام خلال سنتين) * أجر الساعة * نسبة العمل الإضافي
+                // المعادلة: (ساعات إضافية يومية * أيام عمل إضافي) * (أجر الساعة) * 125%
                 overtimeCompensation = overtimeHours * overtimeDays * hourlySalary * (overtimeRate / 100);
                 document.getElementById('overtimeCompensationAmount').innerText = `${overtimeCompensation.toFixed(2)} دينار`;
-                overtimeRateDisplay.innerText = overtimeRate + '%';
+                document.getElementById('overtimeRateDisplay').innerText = overtimeRate + '%';
                 totalCompensation += overtimeCompensation;
             }
 
@@ -570,10 +741,13 @@
             let holidayCompensation = 0;
             if (holidayDays > 0 || fridayDays > 0) {
                 holidayCompensationDiv.classList.remove('hidden');
+                
+                // الحساب: (أيام العطل * الأجر اليومي * نسبة العطل) + (أيام الجمع * الأجر اليومي * نسبة الجمع)
+                // هذا يحسب البدل الإضافي (الـ 150%) فقط، وهو المطلوب بالإضافة إلى الأجر الأساسي المدفوع.
                 holidayCompensation = (holidayDays * dailySalary * (holidayRate / 100)) + (fridayDays * dailySalary * (fridayRate / 100));
                 document.getElementById('holidayCompensationAmount').innerText = `${holidayCompensation.toFixed(2)} دينار`;
-                holidayRateDisplay.innerText = holidayRate + '%';
-                fridayRateDisplay.innerText = fridayRate + '%';
+                document.getElementById('holidayRateDisplay').innerText = holidayRate + '%';
+                document.getElementById('fridayRateDisplay').innerText = fridayRate + '%';
                 totalCompensation += holidayCompensation;
             }
 
@@ -590,4 +764,3 @@
     </script>
 </body>
 </html>
-
