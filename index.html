@@ -415,12 +415,14 @@
 
         /**
          * دالة للتحقق من صحة التواريخ وتطبيق/إزالة الحد الأحمر
+         * يتم استدعاؤها أيضاً في دالة calculateRights للتحقق الفوري.
          */
         function checkDateValidityAndDisplay() {
             const startDateInput = document.getElementById('startDate');
             const endDateInput = document.getElementById('endDate');
             const startDateStr = startDateInput.value;
             const endDateStr = endDateInput.value;
+            let hasError = false;
 
             // إزالة حدود الخطأ السابقة
             startDateInput.classList.remove('date-error-border');
@@ -433,8 +435,10 @@
                 if (startDate > endDate) {
                     startDateInput.classList.add('date-error-border');
                     endDateInput.classList.add('date-error-border');
+                    hasError = true;
                 }
             }
+            return hasError;
         }
         
         /**
@@ -553,9 +557,9 @@
          * دالة مساعدة لعرض رسالة (بدون تركيز آلي على الحقل)
          * @param {string} message - الرسالة المراد عرضها
          * @param {boolean} isError - هل هي رسالة خطأ (أحمر)؟
-         * @param {string} [errorFieldId] - ID الحقل الذي يجب تلوينه باللون الأحمر
+         * @param {string[]} [errorFieldIds] - مصفوفة IDs للحقول التي يجب تلوينها باللون الأحمر
          */
-        function showMessageBox(message, isError = false, errorFieldId = null) {
+        function showMessageBox(message, isError = false, errorFieldIds = []) {
             const messageBox = document.getElementById('message-box');
             const errorMessage = document.getElementById('error-message');
             
@@ -572,13 +576,13 @@
                 errorMessage.classList.remove('hidden');
                 messageBox.classList.add('hidden');
                 
-                // 3. تطبيق الحد الأحمر على الحقل المحدد (إذا وجد)
-                if (errorFieldId) {
-                    const field = document.getElementById(errorFieldId);
+                // 3. تطبيق الحد الأحمر على جميع الحقول المحددة
+                errorFieldIds.forEach(id => {
+                    const field = document.getElementById(id);
                     if (field) {
                         field.classList.add('date-error-border');
                     }
-                }
+                });
             } else {
                 // Logic for non-error messages (blue box)
                 messageBox.innerHTML = `<p>${message}</p>`;
@@ -839,10 +843,10 @@
             // 1. الإعداد والتحقق من المدخلات الأساسية
             const startDateStr = document.getElementById('startDate').value;
             const endDateStr = document.getElementById('endDate').value;
-            const startDateInput = document.getElementById('startDate');
-            const endDateInput = document.getElementById('endDate');
             const salaryInput = parseFloat(document.getElementById('salaryInput').value);
-            const salaryLabel = document.getElementById('salaryLabel').innerText; // الحصول على اسم الحقل ديناميكياً
+            const salaryLabel = document.getElementById('salaryLabel').innerText; 
+            const isFixedTermDismissal = document.getElementById('fixedTerm').checked;
+            const contractEndDateStr = document.getElementById('contractEndDate').value;
 
             // إزالة جميع حدود الخطأ والرسائل القديمة
             clearErrorBorders();
@@ -850,48 +854,64 @@
             document.getElementById('message-box').classList.add('hidden');
             document.getElementById('results').classList.add('hidden'); 
 
-            checkDateValidityAndDisplay(); // تحديث حدود الخطأ على التواريخ قبل المتابعة
-
             document.getElementById('daily-wage-note').classList.add('hidden');
             document.getElementById('daily-award-note').classList.add('hidden');
+            
+            let hasGlobalError = false;
+            let errorFields = [];
+            let errorMessages = [];
 
-
-            // --- التحقق من المدخلات الأساسية (الراتب/الأجر والتواريخ) ---
+            // --- التحقق من المدخلات الأساسية ---
 
             // 1. التحقق من حقل الراتب/الأجر اليومي
             if (isNaN(salaryInput) || salaryInput <= 0) {
-                const errorMsg = 'الرجاء إدخال قيمة صحيحة وموجبة في حقل **' + salaryLabel.replace(' (دينار)', '') + '**.';
-                showMessageBox(errorMsg, true, 'salaryInput'); // Pass 'salaryInput' to highlight
-                return;
+                errorFields.push('salaryInput');
+                errorMessages.push('قيمة الراتب/الأجر غير صحيحة أو مفقودة.');
+                hasGlobalError = true;
             }
 
             // 2. التحقق من تاريخ بداية العمل
             if (!startDateStr) {
-                showMessageBox('الرجاء إدخال **تاريخ بداية العمل**.', true, 'startDate'); // Pass 'startDate' to highlight
-                return;
+                errorFields.push('startDate');
+                errorMessages.push('تاريخ بداية العمل مفقود.');
+                hasGlobalError = true;
             }
             
             // 3. التحقق من تاريخ نهاية العمل
             if (!endDateStr) {
-                showMessageBox('الرجاء إدخال **تاريخ نهاية العمل**.', true, 'endDate'); // Pass 'endDate' to highlight
-                return;
+                errorFields.push('endDate');
+                errorMessages.push('تاريخ نهاية العمل مفقود.');
+                hasGlobalError = true;
             }
             
             // 4. التحقق من صحة ترتيب التواريخ (تاريخ النهاية بعد البداية)
-            if (startDateInput.classList.contains('date-error-border') || endDateInput.classList.contains('date-error-border')) {
-                 showMessageBox('تاريخ نهاية الخدمة يجب أن يكون بعد تاريخ بداية الخدمة. يرجى تصحيح التواريخ المميزة باللون الأحمر.', true);
-                return;
+            if (startDateStr && endDateStr) {
+                if (checkDateValidityAndDisplay()) { // checkDateValidityAndDisplay now returns true if error border applied
+                    errorMessages.push('تاريخ نهاية الخدمة يجب أن يكون بعد تاريخ بدايتها.');
+                    // checkDateValidityAndDisplay() already applies borders to startDate/endDate if invalid
+                    // So we don't need to push them again here unless they were not already pushed for being empty
+                    hasGlobalError = true;
+                }
             }
 
             // 5. التحقق من تاريخ نهاية العقد إذا كان العقد محدد المدة ومفصول تعسفياً
-            const isFixedTermDismissal = document.getElementById('fixedTerm').checked;
-            const contractEndDateStr = document.getElementById('contractEndDate').value;
             if (isFixedTermDismissal && !contractEndDateStr) {
-                showMessageBox('بما أنك اخترت "فصل تعسفي (عقد محدد المدة)"، يرجى إدخال **تاريخ نهاية العقد** لحساب التعويض.', true, 'contractEndDate');
+                errorFields.push('contractEndDate');
+                errorMessages.push('بما أنك اخترت فصلاً تعسفياً لعقد محدد المدة، يرجى إدخال تاريخ نهاية العقد.');
+                hasGlobalError = true;
+            }
+
+            // --- التعامل مع الأخطاء ---
+            if (hasGlobalError) {
+                // عرض رسالة الخطأ المجمعة وتطبيق الحدود الحمراء
+                const uniqueErrorMessages = [...new Set(errorMessages)];
+                const message = uniqueErrorMessages.join(' **•** ');
+                
+                showMessageBox(`الرجاء التحقق من المدخلات التالية: ${message}`, true, errorFields);
                 return;
             }
             
-            // 2. تجميع المدخلات والقيم الأساسية
+            // 2. تجميع المدخلات والقيم الأساسية (يتم المتابعة فقط إذا لم تكن هناك أخطاء)
             const duration = calculateDuration(startDateStr, endDateStr);
             const endDate = new Date(endDateStr);
             const startDate = new Date(startDateStr);
