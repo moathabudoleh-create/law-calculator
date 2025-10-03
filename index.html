@@ -23,8 +23,31 @@
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
         body {
             font-family: 'Tajawal', sans-serif;
-            background-color: #f0f4f8;
+            /* background-color is removed to allow the canvas to be visible */
             direction: rtl;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        /* Style for the 3D background canvas */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place it behind all other content */
+        }
+        .content-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem; /* p-4 sm:p-8 */
+        }
+        @media (min-width: 640px) {
+            .content-wrapper {
+                padding: 2rem;
+            }
         }
         .input-group label {
             transition: color 0.3s ease;
@@ -38,13 +61,8 @@
             border-color: #ef4444 !important; /* Tailwind red-500 */
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
         }
-        /* Style for the footer section to ensure it's centered */
-        .footer-info {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
+        /* Style for the footer section to ensure it's centered - REMOVED */
+        
         /* Custom style for the Total box */
         #total-box {
             background-color: #dbeafe; /* Tailwind blue-100 */
@@ -63,291 +81,304 @@
         }
     </style>
 </head>
-<body class="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
+<body>
+    <!-- Canvas for 3D background -->
+    <canvas id="bg-canvas"></canvas>
 
-    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
-        
-        <h1 class="text-3xl font-bold text-center text-blue-800 mb-6">حاسبة الحقوق العمالية</h1>
-        <p class="text-center text-gray-600 mb-8">
-            بناءً على قانون العمل الأردني. أدخل معلوماتك لحساب مستحقاتك.
-        </p>
+    <!-- Wrapper to center content over the canvas -->
+    <div class="content-wrapper">
+        <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 sm:p-10 w-full max-w-2xl border border-gray-200">
+            
+            <h1 class="text-3xl font-bold text-center text-blue-800 mb-6">حاسبة الحقوق العمالية</h1>
+            <p class="text-center text-gray-600 mb-8">
+                بناءً على قانون العمل الأردني. أدخل معلوماتك لحساب مستحقاتك.
+            </p>
 
-        <!-- Input Section -->
-        <div class="space-y-6">
-            <!-- Salary Input Type Selection -->
-            <div class="input-group">
-                <p class="block text-sm font-medium text-gray-700 mb-2">نوع الأجر:</p>
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <div class="flex items-center">
-                        <input type="radio" id="monthly" name="salaryType" value="monthly" checked class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <label for="monthly" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">راتب شهري</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="radio" id="daily" name="salaryType" value="daily" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <label for="daily" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">أجر يومي</label>
+            <!-- Input Section -->
+            <div class="space-y-6">
+                <!-- Salary Input Type Selection -->
+                <div class="input-group">
+                    <p class="block text-sm font-medium text-gray-700 mb-2">نوع الأجر:</p>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <div class="flex items-center">
+                            <input type="radio" id="monthly" name="salaryType" value="monthly" checked class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <label for="monthly" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">راتب شهري</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="daily" name="salaryType" value="daily" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <label for="daily" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">أجر يومي</label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Salary Input Field -->
-            <div>
-                <label for="salaryInput" id="salaryLabel" class="block text-sm font-medium text-gray-700">الراتب الشهري الأخير (دينار)</label>
-                <input type="number" id="salaryInput" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل راتبك الشهري">
-            </div>
+                <!-- Salary Input Field -->
+                <div>
+                    <label for="salaryInput" id="salaryLabel" class="block text-sm font-medium text-gray-700">الراتب الشهري الأخير (دينار)</label>
+                    <input type="number" id="salaryInput" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل راتبك الشهري">
+                </div>
 
-            <!-- Accrued Salaries Input Group -->
-            <div>
-                <label for="accruedSalariesInput" class="block text-sm font-bold text-gray-700">الرواتب المستحقة (الرواتب غير مقبوضة)</label>
-                <input type="number" id="accruedSalariesInput" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل مبلغ الرواتب المستحقة">
-            </div>
-            <!-- End of Accrued Salaries Input Group -->
+                <!-- Accrued Salaries Input Group -->
+                <div>
+                    <label for="accruedSalariesInput" class="block text-sm font-bold text-gray-700">الرواتب المستحقة (الرواتب غير مقبوضة)</label>
+                    <input type="number" id="accruedSalariesInput" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل مبلغ الرواتب المستحقة">
+                </div>
+                <!-- End of Accrued Salaries Input Group -->
 
 
-            <div class="space-y-4">
-                <p class="block text-sm font-bold text-gray-700">مدة الخدمة</p>
-                <div class="mt-4 space-y-4">
-                    <div>
-                        <label for="startDate" class="block text-sm font-medium text-gray-700">تاريخ بداية العمل</label>
-                        <input type="date" id="startDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    </div>
-                    <div>
-                        <label for="endDate" class="block text-sm font-medium text-gray-700">تاريخ نهاية العمل</label>
-                        <input type="date" id="endDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    </div>
-                    <div id="contractEndDateInput" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <label for="contractEndDate" class="block text-sm font-medium text-blue-700">تاريخ نهاية العقد</label>
-                        <input type="date" id="contractEndDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    </div>
-                    <!-- مدة الخدمة المحتسبة -->
-                    <div id="serviceDurationDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <p class="text-sm font-medium text-blue-700">مدة الخدمة المحتسبة:</p>
-                        <p class="text-base text-blue-900 font-bold mt-1" id="calculatedDuration"></p>
-                    </div>
-                    <!-- المدة المتبقية في العقد (جديد) -->
-                    <div id="remainingContractDurationDisplay" class="hidden bg-red-50 p-3 rounded-md border border-red-200">
-                        <p class="text-sm font-medium text-red-700">المدة المتبقية في العقد:</p>
-                        <p class="text-base text-red-900 font-bold mt-1" id="calculatedRemainingDuration"></p>
-                    </div>
-                    <!-- New section for calculated leave days with an editable input field -->
-                    <div id="calculatedLeaveDaysDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <label for="calculatedLeaveDays" class="text-sm font-medium text-blue-700">
-                            **بدل أيام الإجازات السنوية المحتسبة (لآخر سنتين) (يمكنك التعديل):**
-                        </label>
-                        <input type="number" id="calculatedLeaveDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    </div>
-                    <div id="overtimeDaysPerYearDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
-                        <label for="overtimeDaysPerYear" class="text-sm font-medium text-blue-700">
-                            عدد أيام العمل الإضافي خلال آخر سنتين (يمكنك التعديل):
-                        </label>
-                        <input type="number" id="overtimeDaysPerYear" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                <div class="space-y-4">
+                    <p class="block text-sm font-bold text-gray-700">مدة الخدمة</p>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700">تاريخ بداية العمل</label>
+                            <input type="date" id="startDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700">تاريخ نهاية العمل</label>
+                            <input type="date" id="endDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        </div>
+                        <div id="contractEndDateInput" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <label for="contractEndDate" class="block text-sm font-medium text-blue-700">تاريخ نهاية العقد</label>
+                            <input type="date" id="contractEndDate" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        </div>
+                        <!-- مدة الخدمة المحتسبة -->
+                        <div id="serviceDurationDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <p class="text-sm font-medium text-blue-700">مدة الخدمة المحتسبة:</p>
+                            <p class="text-base text-blue-900 font-bold mt-1" id="calculatedDuration"></p>
+                        </div>
+                        <!-- المدة المتبقية في العقد (جديد) -->
+                        <div id="remainingContractDurationDisplay" class="hidden bg-red-50 p-3 rounded-md border border-red-200">
+                            <p class="text-sm font-medium text-red-700">المدة المتبقية في العقد:</p>
+                            <p class="text-base text-red-900 font-bold mt-1" id="calculatedRemainingDuration"></p>
+                        </div>
+                        <!-- New section for calculated leave days with an editable input field -->
+                        <div id="calculatedLeaveDaysDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <label for="calculatedLeaveDays" class="text-sm font-medium text-blue-700">
+                                **بدل أيام الإجازات السنوية المحتسبة (لآخر سنتين) (يمكنك التعديل):**
+                            </label>
+                            <input type="number" id="calculatedLeaveDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        </div>
+                        <div id="overtimeDaysPerYearDisplay" class="hidden bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <label for="overtimeDaysPerYear" class="text-sm font-medium text-blue-700">
+                                عدد أيام العمل الإضافي خلال آخر سنتين (يمكنك التعديل):
+                            </label>
+                            <input type="number" id="overtimeDaysPerYear" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Entitlement Options Box - ADDED bg-blue-50, p-4, rounded-lg, border border-blue-200 -->
-            <div class="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <p class="block text-sm font-bold text-gray-700">خيارات الاستحقاق والتعويض</p>
+                <!-- Entitlement Options Box - ADDED bg-blue-50, p-4, rounded-lg, border border-blue-200 -->
+                <div class="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p class="block text-sm font-bold text-gray-700">خيارات الاستحقاق والتعويض</p>
+                    
+                    <!-- Row 1: Social Security & Notice Compensation -->
+                    <div class="flex flex-col sm:flex-row sm:space-x-4 sm:space-x-reverse space-y-2 sm:space-y-0">
+                        <div class="flex items-center sm:w-1/2">
+                            <input type="checkbox" id="socialSecurity" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="socialSecurity" class="ml-2 block text-sm font-medium text-gray-700">مشترك في الضمان الاجتماعي</label>
+                        </div>
+                        <!-- Notice Compensation Entitlement -->
+                        <div class="flex items-center sm:w-1/2">
+                            <input type="checkbox" id="noticeCompensationEntitlement" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="noticeCompensationEntitlement" class="ml-2 block text-sm font-medium text-gray-700">يستحق بدل شهر الإشعار</label>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Arbitrary Dismissal (Non-Fixed Term) & Arbitrary Dismissal (Fixed Term) -->
+                    <div class="flex flex-col sm:flex-row sm:space-x-4 sm:space-x-reverse space-y-2 sm:space-y-0">
+                        <div class="flex items-center sm:w-1/2">
+                            <input type="checkbox" id="arbitraryDismissal" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="arbitraryDismissal" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد غير محدد المدة)</label>
+                        </div>
+                        <div class="flex items-center sm:w-1/2">
+                            <input type="checkbox" id="fixedTerm" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="fixedTerm" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد محدد المدة)</label>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Entitlement Options Box -->
+
                 
-                <!-- Row 1: Social Security & Notice Compensation -->
-                <div class="flex flex-col sm:flex-row sm:space-x-4 sm:space-x-reverse space-y-2 sm:space-y-0">
-                    <div class="flex items-center sm:w-1/2">
-                        <input type="checkbox" id="socialSecurity" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="socialSecurity" class="ml-2 block text-sm font-medium text-gray-700">مشترك في الضمان الاجتماعي</label>
+                <!-- Overtime Input Group -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">العمل الإضافي</label>
+                    <div class="flex items-end space-x-2 space-x-reverse">
+                        <div class="flex-grow">
+                            <label for="overtimeHoursPerDay" class="block text-sm font-medium text-gray-700">ساعات العمل الإضافي في اليوم</label>
+                            <input type="number" id="overtimeHoursPerDay" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل عدد الساعات">
+                        </div>
+                        <div class="flex-shrink-0 w-28">
+                            <label for="overtimeRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
+                            <input type="number" id="overtimeRate" value="125" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
+                        </div>
                     </div>
-                    <!-- Notice Compensation Entitlement -->
-                    <div class="flex items-center sm:w-1/2">
-                        <input type="checkbox" id="noticeCompensationEntitlement" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="noticeCompensationEntitlement" class="ml-2 block text-sm font-medium text-gray-700">يستحق بدل شهر الإشعار</label>
+                </div>
+
+                <!-- Holiday and Friday Input Group (now separated) -->
+                <label class="block text-sm font-bold text-gray-700 mb-1">العمل في العطل والأعياد وأيام الجمع</label>
+                <div class="space-y-4">
+                    <!-- Holiday Input Group (Updated Label) -->
+                    <div class="flex items-end space-x-4 space-x-reverse">
+                        <div class="flex-1">
+                            <label for="holidayDays" class="block text-sm font-medium text-gray-700">أيام العطل الرسمية والدينية</label>
+                            <input type="number" id="holidayDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="عدد الأيام">
+                        </div>
+                        <div class="flex-shrink-0 w-28">
+                            <label for="holidayRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
+                            <input type="number" id="holidayRate" value="150" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
+                        </div>
+                    </div>
+                    <!-- Friday Input Group -->
+                    <div class="flex items-end space-x-4 space-x-reverse">
+                        <div class="flex-1">
+                            <label for="fridayDays" class="block text-sm font-medium text-gray-700">أيام الجمع</label>
+                            <input type="number" id="fridayDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="عدد الأيام">
+                        </div>
+                        <div class="flex-shrink-0 w-28">
+                            <label for="fridayRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
+                            <input type="number" id="fridayRate" value="150" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Row 2: Arbitrary Dismissal (Non-Fixed Term) & Arbitrary Dismissal (Fixed Term) -->
-                <div class="flex flex-col sm:flex-row sm:space-x-4 sm:space-x-reverse space-y-2 sm:space-y-0">
-                    <div class="flex items-center sm:w-1/2">
-                        <input type="checkbox" id="arbitraryDismissal" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="arbitraryDismissal" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد غير محدد المدة)</label>
-                    </div>
-                    <div class="flex items-center sm:w-1/2">
-                        <input type="checkbox" id="fixedTerm" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="fixedTerm" class="ml-2 block text-sm font-medium text-gray-700">فصل تعسفي (عقد محدد المدة)</label>
+            </div>
+
+            <!-- Action Buttons (Now side-by-side using flex) -->
+            <div class="mt-8 flex gap-4">
+                <button onclick="calculateRights()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    احسب المستحقات
+                </button>
+                <button onclick="resetFields()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    تفريغ جميع الحقول
+                </button>
+            </div>
+
+            <!-- Error/Message Box Area (Moved here, below buttons) -->
+            <div id="error-message" class="hidden bg-red-100 text-red-700 p-4 rounded-md mt-4 border border-red-300">
+                <p>الرجاء إدخال راتب شهري أو يومي ومدة خدمة صالحة.</p>
+            </div>
+            <div id="message-box" class="hidden bg-blue-100 text-blue-700 p-4 rounded-md mt-4"></div>
+
+            <!-- Results Section -->
+            <div id="results" class="mt-8 space-y-4 hidden">
+                <h2 class="text-2xl font-bold text-blue-800 border-b pb-2 mb-4">النتائج</h2>
+
+                <div id="serviceAward" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">مكافأة نهاية الخدمة:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="serviceAwardAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * يتم احتساب المكافأة للعاملين الذين **ليسوا مشتركين في الضمان الاجتماعي** كما يلي:
+                        <br>
+                        * للعاملين براتب شهري: راتب شهر عن كل سنة خدمة كاملة، واحتساب كسور السنة على أساس تقسيم الراتب الشهري على $365$ يوماً ثم ضربه بعدد أيام كسور السنة.
+                        <br>
+                        * للعاملين بأجر يومي: يُحتسب راتب شهر ($30$ يوماً) عن كل سنة خدمة كاملة، ويُحتسب بدل كسور السنة على أساس الأجر اليومي مضروباً بعدد أيام الخدمة الفعلية في كسر السنة.
+                    </p>
+                </div>
+
+                <div id="dismissalCompensation" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل الفصل التعسفي:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="dismissalCompensationAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * يتم احتساب التعويض كالآتي:
+                        <br>
+                        * **للعقد غير محدد المدة:** يُحتسب نصف راتب شهري عن כל سنة من سنوات الخدمة، بحد أدنى راتب شهرين.
+                        <br>
+                        * **للعقد محدد المدة:** يُحتسب بضرب الأجر اليومي في عدد الأيام المتبقية من العقد.
+                    </p>
+                </div>
+
+                <div id="noticeMonthCompensation" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل شهر الإشعار:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="noticeMonthCompensationAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        *يُحتسب بدل الإشعار بمبلغ يعادل راتب شهر واحد، ويُقدر بـ الأجر اليومي مضروباً في $30$ يوماً.
+                    </p>
+                </div>
+                
+                <div id="leaveCompensationDiv" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل الإجازات السنوية:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="leaveCompensationDivAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * يُحتسب هذا البدل عن رصيد الإجازات غير المستخدمة لآخر سنتين من الخدمة فقط، بمعدل 14 يوماً سنوياً لأول 4 سنوات خدمة، و21 يوماً بعد ذلك.
+                    </p>
+                </div>
+                
+                <div id="overtimeCompensationDiv" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل ساعات العمل الإضافي:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="overtimeCompensationDivAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        يُحتسب هذا البدل بضرب مجموع ساعات العمل الإضافي في أجر الساعة الإضافية. يتم تقدير أجر الساعة الإضافية بناءً على أجر الساعة العادي مضافاً إليه النسبة المئوية المحددة (الافتراضية <span id="overtimeRateDisplay">125%</span>).
+                    </p>
+                </div>
+                
+                <!-- NEW SEPARATE DIV FOR HOLIDAY COMPENSATION -->
+                <div id="holidayOnlyCompensationDiv" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل دوام العطل الرسمية والدينية:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="holidayOnlyCompensationDivAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * هذا المبلغ يمثل **القيمة الإجمالية** المستحقة عن دوام تلك الأيام لآخر سنتين، وهي: الأجر اليومي الأساسي كاملاً **مضافاً إليه** البدل الإضافي.
+                        <br>
+                        * يتم الاحتساب بضرب عدد أيام العطل في الأجر اليومي، ثم ضرب الناتج في نسبة الزيادة المئوية المحددة (النسبة الافتراضية <span id="holidayRateDisplay">150%</span>، أي الأجر الأساسي + **$50\%$** بدل إضافي).
+                    </p>
+                </div>
+
+                <!-- NEW SEPARATE DIV FOR FRIDAY COMPENSATION -->
+                <div id="fridayCompensationDiv" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">بدل دوام أيام الجمع:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="fridayCompensationDivAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * هذا المبلغ يمثل **القيمة الإجمالية** المستحقة عن دوام تلك الأيام لآخر سنتين، وهي: الأجر اليومي الأساسي كاملاً **مضافاً إليه** البدل الإضافي.
+                        <br>
+                        * يتم الاحتساب بضرب عدد أيام الجمع في الأجر اليومي، ثم ضرب الناتج في نسبة الزيادة المئوية المحددة (النسبة الافتراضية <span id="fridayRateDisplay">150%</span>، أي الأجر الأساسي + **$50\%$** بدل إضافي).
+                    </p>
+                </div>
+
+                <!-- Accrued Salaries Compensation -->
+                <div id="accruedSalariesCompensationDiv" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-800">مبلغ الرواتب المستحقة غير المقبوضة:</h3>
+                    <p class="text-green-600 text-xl font-bold mt-1" id="accruedSalariesCompensationDivAmount"></p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        * هذا المبلغ يمثل الرواتب والأجور التي استحقت لك ولم يتم دفعها بعد (يُضاف كاملاً إلى الإجمالي).
+                    </p>
+                </div>
+
+                <!-- Total Amount Box (New Styling) -->
+                <div id="total" class="hidden">
+                    <div id="total-box">
+                        <h3 class="font-semibold text-lg mt-0">إجمالي المستحقات:</h3>
+                        <p class="font-bold mt-1" id="totalAmount"></p>
                     </div>
                 </div>
-            </div>
-            <!-- End Entitlement Options Box -->
-
-            
-            <!-- Overtime Input Group -->
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">العمل الإضافي</label>
-                <div class="flex items-end space-x-2 space-x-reverse">
-                    <div class="flex-grow">
-                        <label for="overtimeHoursPerDay" class="block text-sm font-medium text-gray-700">ساعات العمل الإضافي في اليوم</label>
-                        <input type="number" id="overtimeHoursPerDay" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="أدخل عدد الساعات">
-                    </div>
-                    <div class="flex-shrink-0 w-28">
-                        <label for="overtimeRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
-                        <input type="number" id="overtimeRate" value="125" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
-                    </div>
+                
+                <div id="calculation-notes" class="hidden mt-6 text-sm text-gray-600 border-t pt-4">
+                    <h4 class="font-semibold mb-2">ملاحظات على الحساب:</h4>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li id="daily-wage-note" class="hidden">لاحتساب بدلات الفصل التعسفي وشهر الإنذار للعاملين بأجر يومي، تم تقدير الراتب الشهري على أساس الأجر اليومي مضروباً في $30$ يوماً.</li>
+                        <li id="daily-award-note" class="hidden">تم احتساب مكافأة نهاية الخدمة لعمال المياومة بضرب الأجر اليومي في $30$ لكل سنة خدمة كاملة، بالإضافة إلى أجر كسور السنة المحسوبة على أساس **الأيام الفعلية** في كسر السنة.</li>
+                    </ul>
                 </div>
             </div>
 
-            <!-- Holiday and Friday Input Group (now separated) -->
-            <label class="block text-sm font-bold text-gray-700 mb-1">العمل في العطل والأعياد وأيام الجمع</label>
-            <div class="space-y-4">
-                <!-- Holiday Input Group (Updated Label) -->
-                <div class="flex items-end space-x-4 space-x-reverse">
-                    <div class="flex-1">
-                        <label for="holidayDays" class="block text-sm font-medium text-gray-700">أيام العطل الرسمية والدينية</label>
-                        <input type="number" id="holidayDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="عدد الأيام">
+            <!-- Contact and Copyright Info (Updated Layout) -->
+            <div class="mt-10 pt-4 border-t border-gray-200 text-center">
+                <p class="text-xs text-red-600 mb-4 font-semibold">تنبيه: هذه الحاسبة هي أداة استرشادية فقط والنتائج تقديرية(غير ملزمة لأي جهة). يوصى دائماً باستشارة محامٍ مختص للحصول على استشارة دقيقة.</p>
+                <div class="flex flex-col sm:flex-row justify-between items-center w-full gap-2">
+                    <div class="flex items-center gap-3">
+                        <p class="text-gray-700 font-semibold">المحامي معاذ ابو دوله</p>
+                        <a href="https://wa.me/962788898842" target="_blank" rel="noopener noreferrer" title="تواصل عبر واتساب" class="inline-flex items-center justify-center p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                            <svg aria-hidden="true" focusable="false" viewBox="0 0 448 512" class="w-5 h-5" fill="currentColor"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.8 0-67.6-9.5-97.8-26.7l-7-4.1-72.5 19.1 19.4-70.5-4.5-7.3c-18.4-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path></svg>
+                            <span class="sr-only">تواصل عبر واتساب</span>
+                        </a>
                     </div>
-                    <div class="flex-shrink-0 w-28">
-                        <label for="holidayRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
-                        <input type="number" id="holidayRate" value="150" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
-                    </div>
-                </div>
-                <!-- Friday Input Group -->
-                <div class="flex items-end space-x-4 space-x-reverse">
-                    <div class="flex-1">
-                        <label for="fridayDays" class="block text-sm font-medium text-gray-700">أيام الجمع</label>
-                        <input type="number" id="fridayDays" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="عدد الأيام">
-                    </div>
-                    <div class="flex-shrink-0 w-28">
-                        <label for="fridayRate" class="block text-sm font-medium text-gray-700">النسبة (%)</label>
-                        <input type="number" id="fridayRate" value="150" class="mt-1 block w-full px-2 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out text-center">
-                    </div>
+                    <p class="text-xs text-gray-500">جميع الحقوق محفوظة</p>
                 </div>
             </div>
-
-        </div>
-
-        <!-- Action Buttons (Now side-by-side using flex) -->
-        <div class="mt-8 flex gap-4">
-            <button onclick="calculateRights()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                احسب المستحقات
-            </button>
-            <button onclick="resetFields()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
-                تفريغ جميع الحقول
-            </button>
-        </div>
-
-        <!-- Error/Message Box Area (Moved here, below buttons) -->
-        <div id="error-message" class="hidden bg-red-100 text-red-700 p-4 rounded-md mt-4 border border-red-300">
-            <p>الرجاء إدخال راتب شهري أو يومي ومدة خدمة صالحة.</p>
-        </div>
-        <div id="message-box" class="hidden bg-blue-100 text-blue-700 p-4 rounded-md mt-4"></div>
-
-        <!-- Results Section -->
-        <div id="results" class="mt-8 space-y-4 hidden">
-            <h2 class="text-2xl font-bold text-blue-800 border-b pb-2 mb-4">النتائج</h2>
-
-            <div id="serviceAward" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">مكافأة نهاية الخدمة:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="serviceAwardAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * يتم احتساب المكافأة للعاملين الذين **ليسوا مشتركين في الضمان الاجتماعي** كما يلي:
-                    <br>
-                    * للعاملين براتب شهري: راتب شهر عن كل سنة خدمة كاملة، واحتساب كسور السنة على أساس تقسيم الراتب الشهري على $365$ يوماً ثم ضربه بعدد أيام كسور السنة.
-                    <br>
-                    * للعاملين بأجر يومي: يُحتسب راتب شهر ($30$ يوماً) عن كل سنة خدمة كاملة، ويُحتسب بدل كسور السنة على أساس الأجر اليومي مضروباً بعدد أيام الخدمة الفعلية في كسر السنة.
-                </p>
-            </div>
-
-            <div id="dismissalCompensation" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل الفصل التعسفي:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="dismissalCompensationAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * يتم احتساب التعويض كالآتي:
-                    <br>
-                    * **للعقد غير محدد المدة:** يُحتسب نصف راتب شهري عن كل سنة من سنوات الخدمة، بحد أدنى راتب شهرين.
-                    <br>
-                    * **للعقد محدد المدة:** يُحتسب بضرب الأجر اليومي في عدد الأيام المتبقية من العقد.
-                </p>
-            </div>
-
-            <div id="noticeMonthCompensation" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل شهر الإشعار:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="noticeMonthCompensationAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    *يُحتسب بدل الإشعار بمبلغ يعادل راتب شهر واحد، ويُقدر بـ الأجر اليومي مضروباً في $30$ يوماً.
-                </p>
-            </div>
-            
-            <div id="leaveCompensationDiv" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل الإجازات السنوية:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="leaveCompensationDivAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * يتم حساب هذا البدل حصرياً عن الإجازات المتراكمة التي لم يحصل عليها العامل خلال **آخر سنتين من الخدمة** كحد أقصى.
-                    <br>
-                    * **معدل الاحتساب (القاعدة الجديدة):** يتم تطبيق معدل $14$ يوماً للأيام التي تقع ضمن فترة السنوات الأربع الأولى، ومعدل $21$ يوماً للأيام التي تقع ضمن السنة الخامسة وما بعدها. ويتم تطبيق هذه المعدلات على أيام الخدمة الفعلية التي تقع ضمن فترة السنتين الأخيرة فقط.
-                    <br>
-                    * **ملاحظة حول الكسور:** إذا كانت مدة الخدمة التي يتم احتساب الإجازات عنها هي سنتان كاملتان (الحد الأقصى)، **يتم حذف كسور اليوم** لتقدير عدد الأيام المحتسبة.
-                </p>
-            </div>
-            
-            <div id="overtimeCompensationDiv" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل ساعات العمل الإضافي:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="overtimeCompensationDivAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    يُحتسب هذا البدل بضرب مجموع ساعات العمل الإضافي في أجر الساعة الإضافية. يتم تقدير أجر الساعة الإضافية بناءً على أجر الساعة العادي مضافاً إليه النسبة المئوية المحددة (الافتراضية <span id="overtimeRateDisplay">125%</span>).
-                </p>
-            </div>
-            
-            <!-- NEW SEPARATE DIV FOR HOLIDAY COMPENSATION -->
-            <div id="holidayOnlyCompensationDiv" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل دوام العطل الرسمية والدينية:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="holidayOnlyCompensationDivAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * هذا المبلغ يمثل **القيمة الإجمالية** المستحقة عن دوام تلك الأيام لآخر سنتين، وهي: الأجر اليومي الأساسي كاملاً **مضافاً إليه** البدل الإضافي.
-                    <br>
-                    * يتم الاحتساب بضرب عدد أيام العطل في الأجر اليومي، ثم ضرب الناتج في نسبة الزيادة المئوية المحددة (النسبة الافتراضية <span id="holidayRateDisplay">150%</span>، أي الأجر الأساسي + **$50\%$** بدل إضافي).
-                </p>
-            </div>
-
-            <!-- NEW SEPARATE DIV FOR FRIDAY COMPENSATION -->
-            <div id="fridayCompensationDiv" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">بدل دوام أيام الجمع:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="fridayCompensationDivAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * هذا المبلغ يمثل **القيمة الإجمالية** المستحقة عن دوام تلك الأيام لآخر سنتين، وهي: الأجر اليومي الأساسي كاملاً **مضافاً إليه** البدل الإضافي.
-                    <br>
-                    * يتم الاحتساب بضرب عدد أيام الجمع في الأجر اليومي، ثم ضرب الناتج في نسبة الزيادة المئوية المحددة (النسبة الافتراضية <span id="fridayRateDisplay">150%</span>، أي الأجر الأساسي + **$50\%$** بدل إضافي).
-                </p>
-            </div>
-
-            <!-- Accrued Salaries Compensation -->
-            <div id="accruedSalariesCompensationDiv" class="hidden">
-                <h3 class="font-semibold text-lg text-gray-800">مبلغ الرواتب المستحقة غير المقبوضة:</h3>
-                <p class="text-green-600 text-xl font-bold mt-1" id="accruedSalariesCompensationDivAmount"></p>
-                <p class="text-sm text-gray-500 mt-1">
-                    * هذا المبلغ يمثل الرواتب والأجور التي استحقت لك ولم يتم دفعها بعد (يُضاف كاملاً إلى الإجمالي).
-                </p>
-            </div>
-
-            <!-- Total Amount Box (New Styling) -->
-            <div id="total" class="hidden">
-                <div id="total-box">
-                    <h3 class="font-semibold text-lg mt-0">إجمالي المستحقات:</h3>
-                    <p class="font-bold mt-1" id="totalAmount"></p>
-                </div>
-            </div>
-            
-            <div id="calculation-notes" class="hidden mt-6 text-sm text-gray-600 border-t pt-4">
-                <h4 class="font-semibold mb-2">ملاحظات على الحساب:</h4>
-                <ul class="list-disc list-inside space-y-1">
-                    <li id="daily-wage-note" class="hidden">لاحتساب بدلات الفصل التعسفي وشهر الإنذار للعاملين بأجر يومي، تم تقدير الراتب الشهري على أساس الأجر اليومي مضروباً في $30$ يوماً.</li>
-                    <li id="daily-award-note" class="hidden">تم احتساب مكافأة نهاية الخدمة لعمال المياومة بضرب الأجر اليومي في $30$ لكل سنة خدمة كاملة، بالإضافة إلى أجر كسور السنة المحسوبة على أساس **الأيام الفعلية** في كسر السنة.</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Contact and Copyright Info (Updated to be centered at the very bottom) -->
-        <div class="mt-10 pt-4 border-t border-gray-200 footer-info">
-            <p class="text-gray-700 font-semibold mb-1">المحامي معاذ ابو دوله هاتف 0788898842</p>
-            <p class="text-xs text-gray-500">جميع الحقوق محفوظة</p>
-            <p class="text-xs text-red-600 mt-2 font-semibold">تنبيه: هذه الحاسبة هي أداة استرشادية فقط والنتائج تقديرية. يوصى دائماً باستشارة محامٍ مختص للحصول على استشارة دقيقة.</p>
         </div>
     </div>
-
+    
+    <!-- Three.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Main calculator script -->
     <script>
         // --- CONSTANTS AND LEGAL RATES ---
         const MS_IN_DAY = 1000 * 60 * 60 * 24;
@@ -358,7 +389,7 @@
         const LEAVE_RATE_UNDER_5Y = 14; // معدل الإجازة السنوية قبل إكمال 4 سنوات (للأربع سنوات الأولى)
         const LEAVE_RATE_OVER_5Y = 21; // معدل الإجازة السنوية بعد إكمال 4 سنوات (للسنة الخامسة وما بعدها)
         const MIN_DISMISSAL_MONTHS = 2; // الحد الأدنى لتعويض الفصل التعسفي (شهرين)
-        const DISMISSAL_RATE_PER_YEAR = 0.5; // معدل التعويض عن كل سنة خدمة (نصف شهر)
+        const DISMISSAL_RATE_PER_YEAR = 0.5; // معدل التعويض عن כל سنة خدمة (نصف شهر)
 
         document.addEventListener('DOMContentLoaded', () => {
             const salaryTypeRadios = document.getElementsByName('salaryType');
@@ -405,6 +436,7 @@
 
             // مستمعات تحديث المدة
             startDateInput.addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
+            startDateInput.addEventListener('blur', checkDateValidityAndDisplay);
             endDateInput.addEventListener('blur', checkDateValidityAndDisplay);
             endDateInput.addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay); 
             document.getElementById('contractEndDate').addEventListener('change', updateDurationAndLeaveAndOvertimeDisplay);
@@ -834,7 +866,6 @@
                     T_2y_date.setFullYear(T_end_date.getFullYear() - 2);
 
                     const T_comp_start_time = Math.max(startDate.getTime(), T_2y_date.getTime());
-                    const T_comp_start_date = new Date(T_comp_start_time);
                     
                     // 2. تاريخ إكمال 4 سنوات (نهاية السنة الرابعة - بدء تطبيق معدل 21 يوم)
                     const T_4y_end_date = new Date(startDate);
@@ -847,7 +878,7 @@
                         const compensableDays = (T_end_date.getTime() - T_comp_start_time) / MS_IN_DAY;
                         totalDeservedLeaveDays = Math.max(0, compensableDays) * (LEAVE_RATE_UNDER_5Y / DAYS_IN_YEAR_LEAVE);
                     } 
-                    // إذا كانت نهاية الخدمة بعد إكمال 4 سنوات
+                    // إذا كانت نهاية الخدمة بعد إكمال 4 سنوات (أي أن فترة التعويض قد تتداخل مع المعدلين)
                     else {
                         let daysAt14Rate = 0;
                         let daysAt21Rate = 0;
@@ -859,10 +890,6 @@
                         // إذا كانت فترة التعويض بدأت قبل نهاية السنة الرابعة، نحسب الفترة بين T_comp_start_time و T_4y_end_date
                         if (T_14_start_time < T_14_end_time) {
                             daysAt14Rate = (T_14_end_time - T_14_start_time) / MS_IN_DAY;
-                            // تأكد من أن الأيام المحتسبة لا تتجاوز 4 سنوات
-                            if (startDate.getTime() + (daysAt14Rate * MS_IN_DAY) > T_4y_end_date.getTime()) {
-                                daysAt14Rate = (T_4y_end_date.getTime() - T_comp_start_time) / MS_IN_DAY;
-                            }
                             daysAt14Rate = Math.max(0, daysAt14Rate);
                         }
                         
@@ -874,7 +901,6 @@
                         if (T_21_start_time < T_21_end_time) {
                             // إذا كانت فترة التعويض بدأت بعد الـ 4 سنوات، تبدأ فترة الـ 21 يوم من T_comp_start_time
                             const actual_21_start_time = Math.max(T_21_start_time, T_comp_start_time);
-                            
                             daysAt21Rate = (T_21_end_time - actual_21_start_time) / MS_IN_DAY;
                         }
 
@@ -1070,6 +1096,91 @@
             // 4. عرض الإجمالي النهائي
             updateFinalTotalDisplay(totalAmount);
         }
+    </script>
+    
+    <!-- 3D Background Script -->
+    <script>
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // Set background to white
+        scene.fog = new THREE.Fog(0xffffff, 1, 30); 
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.querySelector('#bg-canvas'),
+            antialias: true
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.setZ(10);
+        
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        scene.add(ambientLight);
+
+        // --- Objects (Lines and Dots) ---
+        const linesGroup = new THREE.Group();
+        const dotsGroup = new THREE.Group();
+
+        // Create Lines
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x40E0D0 }); // Turquoise
+        const linePoints = [];
+        const lineCount = 200;
+        const lineSpread = 25;
+        for (let i = 0; i < lineCount; i++) {
+            const x1 = (Math.random() - 0.5) * lineSpread;
+            const y1 = (Math.random() - 0.5) * lineSpread;
+            const z1 = (Math.random() - 0.5) * lineSpread;
+            const x2 = x1 + (Math.random() - 0.5) * 5;
+            const y2 = y1 + (Math.random() - 0.5) * 5;
+            const z2 = z1 + (Math.random() - 0.5) * 5;
+            linePoints.push(new THREE.Vector3(x1, y1, z1));
+            linePoints.push(new THREE.Vector3(x2, y2, z2));
+        }
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
+        const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+        linesGroup.add(lines);
+        scene.add(linesGroup);
+        
+        // Create Dots
+        const dotGeometry = new THREE.BufferGeometry();
+        const dotMaterial = new THREE.PointsMaterial({ color: 0x008B8B, size: 0.08 }); // Darker Turquoise
+        const dotVertices = [];
+        const dotCount = 8000;
+        const dotSpread = 30;
+        for (let i = 0; i < dotCount; i++) {
+            const x = (Math.random() - 0.5) * dotSpread;
+            const y = (Math.random() - 0.5) * dotSpread;
+            const z = (Math.random() - 0.5) * dotSpread;
+            dotVertices.push(x, y, z);
+        }
+        dotGeometry.setAttribute('position', new THREE.Float32BufferAttribute(dotVertices, 3));
+        const dots = new THREE.Points(dotGeometry, dotMaterial);
+        dotsGroup.add(dots);
+        scene.add(dotsGroup);
+
+
+        // --- Animation ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Slowly rotate the groups for a dynamic effect
+            linesGroup.rotation.y += 0.0004;
+            linesGroup.rotation.x += 0.0002;
+            dotsGroup.rotation.y -= 0.0003; // Rotate in the opposite direction for parallax
+            dotsGroup.rotation.x -= 0.0001;
+
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- Handle Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
     </script>
 </body>
 </html>
